@@ -59,6 +59,8 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
   mainWindow.setTitle('AP PokéClicker');
 
+  setupZoomHandler(mainWindow);
+
   // Check if we've already downloaded the data, otherwise load our loading screen
   if (fs.existsSync(GAME_INDEX_PATH)) {
     mainWindow.loadURL(`file://${GAME_INDEX_PATH}`);
@@ -91,6 +93,8 @@ function createSecondaryWindow() {
   newWindow.setMenuBarVisibility(false);
   newWindow.setTitle('PokéClicker (alternate)');
 
+  setupZoomHandler(newWindow);
+
   // Check if we've already downloaded the data, otherwise load our loading screen
   if (fs.existsSync(GAME_INDEX_PATH)) {
     newWindow.loadURL(`file://${GAME_INDEX_PATH}`);
@@ -108,6 +112,37 @@ function createSecondaryWindow() {
     e.preventDefault()
   });
   return newWindow;
+}
+
+function setupZoomHandler(targetWindow) {
+  // Keyboard (Ctrl/Cmd + Plus, Minus, Zero)
+  targetWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type === 'keyDown' && (input.control || input.meta)) {
+      let currentZoom = targetWindow.webContents.getZoomFactor();
+      
+      if (input.key === '+' || input.key === '=') {
+        if (currentZoom < 3.0) targetWindow.webContents.setZoomFactor(currentZoom + 0.1);
+        event.preventDefault();
+      } else if (input.key === '-') {
+        if (currentZoom > 0.5) targetWindow.webContents.setZoomFactor(currentZoom - 0.1);
+        event.preventDefault();
+      } else if (input.key === '0') {
+        targetWindow.webContents.setZoomFactor(1.0);
+        event.preventDefault();
+      }
+    }
+  });
+
+  // Mouse Wheel (Ctrl/Cmd + Scroll Wheel or Trackpad Pinch)
+  targetWindow.webContents.on('zoom-changed', (event, zoomDirection) => {
+    let currentZoom = targetWindow.webContents.getZoomFactor();
+
+    if (zoomDirection === 'in' && currentZoom < 3.0) {
+      targetWindow.webContents.setZoomFactor(currentZoom + 0.1);
+    } else if (zoomDirection === 'out' && currentZoom > 0.5) {
+      targetWindow.webContents.setZoomFactor(currentZoom - 0.1);
+    }
+  });
 }
 
 app.on('ready', createWindow);
