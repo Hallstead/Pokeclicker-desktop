@@ -1,7 +1,7 @@
 {
-  "name": "pokeclicker-desktop",
+  "name": "ap-pokeclicker-desktop",
   "version": "1.2.0",
-  "description": "PokeClicker Desktop",
+  "description": "AP PokeClicker Desktop",
   "repository": {
     "type": "git",
     "url": "https://github.com/RedSparr0w/Pokeclicker-desktop.git"
@@ -30,7 +30,7 @@
     "electron-builder": "^23.6.0"
   },
   "build": {
-    "productName": "PokéClicker",
+    "productName": "AP-PokéClicker",
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true

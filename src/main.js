@@ -13,6 +13,18 @@ const clientVersion = app.getVersion();
 
 const dataDir =  (electron.app || electron.remote.app).getPath('userData');
 
+// Configure which game repository and branch to download/update from.
+const GAME_REPO_OWNER = 'Hallstead';
+const GAME_REPO_NAME = 'AP-Pokeclicker';
+const GAME_REPO_BRANCH = 'pages';
+const GAME_ARCHIVE_ROOT = `${GAME_REPO_NAME}-${GAME_REPO_BRANCH}`;
+const GAME_ARCHIVE_DOCS_ENTRY = `${GAME_ARCHIVE_ROOT}/docs/`;
+const GAME_DOCS_DIR = `${dataDir}/${GAME_ARCHIVE_ROOT}/docs`;
+const GAME_INDEX_PATH = `${GAME_DOCS_DIR}/index.html`;
+const GAME_PACKAGE_PATH = `${GAME_DOCS_DIR}/package.json`;
+const GAME_DOWNLOAD_URL = `https://codeload.github.com/${GAME_REPO_OWNER}/${GAME_REPO_NAME}/zip/${GAME_REPO_BRANCH}`;
+const GAME_PACKAGE_URL = `https://raw.githubusercontent.com/${GAME_REPO_OWNER}/${GAME_REPO_NAME}/${GAME_REPO_BRANCH}/docs/package.json`;
+
 console.info('Data directory:', dataDir);
 
 let checkForUpdatesInterval;
@@ -45,11 +57,11 @@ function createWindow() {
   });
 
   mainWindow.setMenuBarVisibility(false);
-  mainWindow.setTitle('PokéClicker');
+  mainWindow.setTitle('AP PokéClicker');
 
   // Check if we've already downloaded the data, otherwise load our loading screen
-  if (fs.existsSync(`${dataDir}/pokeclicker-master/docs/index.html`)) {
-    mainWindow.loadURL(`file://${dataDir}/pokeclicker-master/docs/index.html`);
+  if (fs.existsSync(GAME_INDEX_PATH)) {
+    mainWindow.loadURL(`file://${GAME_INDEX_PATH}`);
   } else {
     mainWindow.loadURL(`file://${__dirname}/pokeclicker-master/docs/index.html`);
   }
@@ -80,8 +92,8 @@ function createSecondaryWindow() {
   newWindow.setTitle('PokéClicker (alternate)');
 
   // Check if we've already downloaded the data, otherwise load our loading screen
-  if (fs.existsSync(`${dataDir}/pokeclicker-master/docs/index.html`)) {
-    newWindow.loadURL(`file://${dataDir}/pokeclicker-master/docs/index.html`);
+  if (fs.existsSync(GAME_INDEX_PATH)) {
+    newWindow.loadURL(`file://${GAME_INDEX_PATH}`);
   } else {
     newWindow.loadURL(`file://${__dirname}/pokeclicker-master/docs/index.html`);
   }
@@ -191,7 +203,7 @@ if (!isMainInstance) {
   const downloadUpdate = async (initial = false) => {
     const zipFilePath = `${dataDir}/update.zip`;
     const file = fs.createWriteStream(zipFilePath);
-    https.get('https://codeload.github.com/pokeclicker/pokeclicker/zip/master', async res => {
+    https.get(GAME_DOWNLOAD_URL, async res => {
       let cur = 0;
       try {
         if (!initial) await mainWindow.webContents.executeJavaScript(`Notifier.notify({ title: '[UPDATER] v${newVersion}', message: 'Downloading Files...<br/><span id="update-message-progress">Please Wait...</span>', timeout: 1e6 })`);
@@ -213,12 +225,12 @@ if (!isMainInstance) {
 
         const zip = new Zip(zipFilePath);
 
-        const extracted = zip.extractEntryTo('pokeclicker-master/docs/', `${dataDir}`, true, true);
+        const extracted = zip.extractEntryTo(GAME_ARCHIVE_DOCS_ENTRY, `${dataDir}`, true, true);
 
         fs.unlinkSync(zipFilePath);
 
         if (!extracted) {
-          return downloadUpdateFailed();
+          return downloadUpdateFailed(`Downloaded zip did not contain ${GAME_ARCHIVE_DOCS_ENTRY}`);
         }
 
         currentVersion = newVersion;
@@ -226,7 +238,7 @@ if (!isMainInstance) {
 
         // If this is the initial download, don't ask the user about refreshing the page
         if (initial) {
-          mainWindow.loadURL(`file://${dataDir}/pokeclicker-master/docs/index.html`);
+          mainWindow.loadURL(`file://${GAME_INDEX_PATH}`);
           return;
         }
 
@@ -239,7 +251,7 @@ if (!isMainInstance) {
         });
 
         if (userResponse == 0){
-          mainWindow.loadURL(`file://${dataDir}/pokeclicker-master/docs/index.html`);
+          mainWindow.loadURL(`file://${GAME_INDEX_PATH}`);
         }
       });
     }).on('error', (e) => {
@@ -247,14 +259,17 @@ if (!isMainInstance) {
     });
   }
 
-  const downloadUpdateFailed = () => {
+  const downloadUpdateFailed = (detailMessage = '') => {
     // If client exe updating, return
     if (windowClosed) return;
+
+    const baseMessage = 'Failed to download or extract the update,\nWould you like to retry?';
+    const message = detailMessage ? `${baseMessage}\n\nDetails: ${detailMessage}` : baseMessage;
 
     const userResponse = dialog.showMessageBoxSync(mainWindow, {
       type: 'error',
       title: 'PokeClicker - Update failed!',
-      message: `Failed to download or extract the update,\nWould you like to retry?`,
+      message,
       icon: `${__dirname}/icon.png`,
       buttons: ['Yes', 'No'],
       noLink: true,
@@ -266,7 +281,7 @@ if (!isMainInstance) {
   }
 
   const checkForUpdates = () => {
-    const request = https.get('https://raw.githubusercontent.com/pokeclicker/pokeclicker/master/package.json', res => {
+    const request = https.get(GAME_PACKAGE_URL, res => {
       let body = '';
 
       res.on('data', d => {
@@ -277,8 +292,8 @@ if (!isMainInstance) {
         let data = {version:'0.0.0'};
         try {
           data = JSON.parse(body);
-          newVersion = data.version;
-          const newVersionAvailable = isNewerVersion(data.version);
+          newVersion = data['ap-version'];
+          const newVersionAvailable = isNewerVersion(data['ap-version']);
 
           if (newVersionAvailable) {
             // Stop checking for updates
@@ -327,7 +342,7 @@ if (!isMainInstance) {
 
   try {
     // If we can get our current version, start checking for updates once the game starts
-    currentVersion = JSON.parse(fs.readFileSync(`${dataDir}/pokeclicker-master/docs/package.json`).toString()).version;
+    currentVersion = JSON.parse(fs.readFileSync(GAME_PACKAGE_PATH).toString())['ap-version'];
     if (currentVersion == '0.0.0') throw Error('Must re-download updated version');
     setTimeout(() => {
       startUpdateCheckInterval(true);

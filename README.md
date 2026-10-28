@@ -2,7 +2,6 @@
 
 A web wrapper for Pokeclicker
 
-[![total downloads](https://img.shields.io/github/downloads/RedSparr0w/Pokeclicker-Desktop/total?label=total%20downloads&style=flat-square) ![downloads](https://img.shields.io/github/downloads/RedSparr0w/Pokeclicker-Desktop/latest/total?style=flat-square)](https://github.com/RedSparr0w/Pokeclicker-desktop/releases/latest)
 
 ## Features:
 - Runs in background when minimised
@@ -15,10 +14,10 @@ A web wrapper for Pokeclicker
 ## Installing
 
 ### Windows
-Download and run `PokeClicker.Setup.{version}.exe` from [the latest release](https://github.com/RedSparr0w/Pokeclicker-desktop/releases/latest)
+Download and run `AP-PokeClicker.Setup.{version}.exe` from [the latest release](https://github.com/Hallstead/Pokeclicker-desktop/releases/latest)
 
 ### Linux
-Download and install `pokeclicker-desktop_{version}_amd64.deb` from [the latest release](https://github.com/RedSparr0w/Pokeclicker-desktop/releases/latest)
+Download and install `ap-pokeclicker-desktop_{version}_amd64.deb` from [the latest release](https://github.com/Hallstead/Pokeclicker-desktop/releases/latest)
 
 ### Mac
 
